@@ -13,9 +13,10 @@ exports.handler = async function (event, context) {
     // Get the user's message from the request body
     const { history } = JSON.parse(event.body);
 
-    // Authenticate using the Service Account JSON from the environment variable
+    // Authenticate using the Service Account JSON and the CORRECT scope
     const auth = new GoogleAuth({
       credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON),
+      // This is the line that fixes the "insufficient_scope" error
       scopes: 'https://www.googleapis.com/auth/cloud-platform',
     });
 
