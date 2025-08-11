@@ -1,0 +1,11 @@
+# This file should be in the root of your project.
+
+[build]
+  # This command tells Netlify to install the dependencies from your package.json
+  command = "npm install"
+  # This specifies the directory where your serverless functions are located.
+  functions = "netlify/functions"
+
+[functions]
+  # This ensures the Node.js environment is set up correctly for your function.
+  node_bundler = "esbuild"

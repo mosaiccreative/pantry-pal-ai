@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Founder's Pantry - Pantry Pal AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> <!-- For rendering Markdown -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chat-bubble-user {
+            background-color: #3B82F6; /* Blue-500 */
+            color: white;
+        }
+        .chat-bubble-ai {
+            background-color: #F3F4F6; /* Gray-100 */
+            color: #1F2937; /* Gray-800 */
+        }
+        /* Styles for rendered markdown content */
+        .chat-bubble-ai .prose {
+            font-size: 0.875rem;
+            color: #1F2937;
+            max-width: none;
+        }
+        .chat-bubble-ai .prose h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            margin-top: 1.25rem;
+        }
+         .chat-bubble-ai .prose h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+        .chat-bubble-ai .prose ul,
+        .chat-bubble-ai .prose ol {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            margin-top: 0.5rem;
+        }
+         .chat-bubble-ai .prose ol {
+            list-style-type: decimal;
+        }
+        .chat-bubble-ai .prose strong {
+            font-weight: 600;
+        }
+        .chat-bubble-ai .prose a {
+            color: #2563EB;
+            text-decoration: underline;
+        }
+         .chat-bubble-ai .prose p {
+            margin-bottom: 0.5rem;
+        }
+        #chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #F3F4F6;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 3px;
+        }
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+        }
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            margin: 0 2px;
+            background-color: #9CA3AF;
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-3xl mx-auto bg-white rounded-2xl shadow-lg flex flex-col h-[90vh]">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-white rounded-t-2xl">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">✨ Pantry Pal AI</h1>
+                <p class="text-sm text-gray-500">Your Global Food Business Assistant</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                 <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-sm font-medium text-green-600">Online</span>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div id="chat-container" class="flex-1 p-6 overflow-y-auto">
+            <!-- Initial AI message -->
+            <div class="flex justify-start mb-4">
+                <div class="chat-bubble-ai rounded-lg p-3 max-w-lg">
+                    <p class="text-sm">Welcome to Pantry Pal! I'm your AI assistant, powered by Gemini. To create your foolproof guide to launching your food business, I'll start by asking a few questions. What's on your mind today?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+            <div class="flex items-center space-x-3">
+                <input type="text" id="user-input" placeholder="e.g., How do I start my hot sauce business?" class="flex-1 w-full px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="send-btn" class="bg-blue-500 text-white rounded-full p-3 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        
+        let chatHistory = [];
+
+        async function getGeminiResponse(currentHistory) {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            // This is the globally-aware "foolproof" system prompt with enhanced legal section.
+            const systemPrompt = `You are Pantry Pal, an expert AI assistant for food entrepreneurs. Your goal is to provide a foolproof, sequential, and extremely granular step-by-step guide that is tailored to the user's specific location anywhere in the world.
+            
+            Your process is as follows:
+            1.  When a user asks a general question (e.g., "how do I start my business?"), you MUST first ask clarifying questions to gather critical details. Ask only one question at a time. Key questions are:
+                * What specific type of food product are you making?
+                * What city, state/province, and country are you operating in? This is crucial for providing accurate local information.
+                * Will you be producing this in your home kitchen or a commercial kitchen?
+            2.  Once you have these details, you will generate a comprehensive, step-by-step guide. Your FINAL response MUST begin with the exact phrase "### Guide:".
+            3.  The guide must be formatted using Markdown and be extremely detailed and actionable. It MUST include:
+                * **A 'Legal & Business Formation' section.** This MUST be the first step. It must detail the process of registering a business entity (like an LLC or sole proprietorship) and obtaining a federal tax ID number (like an EIN in the US), with direct links to the relevant Secretary of State and IRS (or equivalent international) websites for the user's specific location.
+                * **A 'Food Licensing & Safety' section.** This must include direct links to the correct local food licensing applications (e.g., Cottage Food Law) and contact information for local health departments.
+                * **Specific, tailored advice** based on their kitchen choice. 
+                    * For **Home Kitchens**: Provide links to relevant YouTube tutorials and specific product examples on e-commerce sites like Amazon for necessary equipment (e.g., bottling kits, pH meters).
+                    * For **Commercial Kitchens**: Search for and provide a list of actual, local commercial kitchens near the user's city with names and contact info if available.
+                * **A dedicated section on 'Branding and Packaging'** with actionable advice.
+                * **All steps must be in the correct, logical order** for maximum efficiency, acknowledging that the order may vary slightly by region.
+
+            Review the conversation history and decide the next step: either ask another clarifying question or generate the final, foolproof guide.`;
+            
+            const payload = {
+                contents: [
+                    { role: "user", parts: [{ text: systemPrompt }] },
+                    { role: "model", parts: [{ text: "Understood. I will act as a foolproof global consultant, asking key questions first before providing a comprehensive, locally-tailored, link-filled guide with a mandatory legal formation section. What is the user's first question?" }] },
+                    ...currentHistory
+                ]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                     return `Error: I couldn't connect to my knowledge base. Please check the connection and try again. (Status: ${response.status})`;
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    return "I'm sorry, I had trouble thinking of a response. Could you try rephrasing?";
+                }
+
+            } catch (error) {
+                console.error("Error fetching from Gemini API:", error);
+                return "I'm having a little trouble connecting. Please try again in a moment.";
+            }
+        }
+
+        function addMessage(message, sender) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('flex', 'mb-4');
+            bubble.id = sender === 'ai-typing' ? 'typing-indicator' : '';
+
+            const messageContent = document.createElement('div');
+            
+            if (sender === 'ai-typing') {
+                messageContent.classList.add('chat-bubble-ai', 'rounded-lg', 'p-3', 'max-w-lg', 'typing-indicator');
+                messageContent.innerHTML = `<span></span><span></span><span></span>`;
+            } else {
+                messageContent.classList.add('rounded-lg', 'p-3', 'max-w-full');
+                if (sender === 'ai' && message.startsWith('### Guide:')) {
+                    const guideContent = message.replace('### Guide:', '').trim();
+                    messageContent.innerHTML = `<div class="prose">${marked.parse(guideContent)}</div>`;
+                } else {
+                    messageContent.textContent = message;
+                }
+            }
+
+            if (sender === 'user') {
+                bubble.classList.add('justify-end');
+                messageContent.classList.add('chat-bubble-user');
+            } else {
+                bubble.classList.add('justify-start');
+                if (sender !== 'ai-typing') {
+                    messageContent.classList.add('chat-bubble-ai');
+                }
+            }
+            
+            bubble.appendChild(messageContent);
+            chatContainer.appendChild(bubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function handleUserMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            chatHistory.push({ role: "user", parts: [{ text: message }] });
+            userInput.value = '';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+
+            addMessage('', 'ai-typing');
+
+            const aiResponse = await getGeminiResponse(chatHistory);
+            
+            const typingIndicator = document.getElementById('typing-indicator');
+            if(typingIndicator) {
+                chatContainer.removeChild(typingIndicator);
+            }
+
+            addMessage(aiResponse, 'ai');
+            chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+            
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+        }
+
+        sendBtn.addEventListener('click', handleUserMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserMessage();
+            }
+        });
+    </script>
+</body>
+</html>
