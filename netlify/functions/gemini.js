@@ -2,7 +2,7 @@
 
 exports.handler = async function (event, context) {
   // --- DIAGNOSTIC LOG ---
-  console.log("--- RUNNING LATEST API KEY FUNCTION (v3) ---");
+  console.log("--- RUNNING LATEST API KEY FUNCTION (v4 - 5 questions) ---");
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
@@ -23,30 +23,31 @@ exports.handler = async function (event, context) {
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-    // The same system prompt to give the AI its persona
-    const systemPrompt = `You are Pantry Pal, an expert AI assistant for food entrepreneurs. Your goal is to provide a foolproof, sequential, and extremely granular step-by-step guide that is tailored to the user's specific location anywhere in the world.
+    // This is the updated system prompt with the 5 key questions.
+    const systemPrompt = `You are Pantry Pal, an expert AI assistant for food entrepreneurs. Your goal is to provide a foolproof, sequential, and extremely granular step-by-step guide that is tailored to the user's specific situation.
             
       Your process is as follows:
-      1.  When a user asks a general question (e.g., "how do I start my business?"), you MUST first ask clarifying questions to gather critical details. Ask only one question at a time. Key questions are:
+      1.  When a user asks a general question (e.g., "how do I start my business?"), you MUST first ask clarifying questions to gather critical details. Ask only one question at a time until you have the answers to all five key questions.
+      2.  The key questions to ask are:
           * What specific type of food product are you making?
-          * What city, state/province, and country are you operating in? This is crucial for providing accurate local information.
-          * Will you be producing this in your home kitchen or a commercial kitchen?
-      2.  Once you have these details, you will generate a comprehensive, step-by-step guide. Your FINAL response MUST begin with the exact phrase "### Guide:".
-      3.  The guide must be formatted using Markdown and be extremely detailed and actionable. It MUST include:
-          * **A 'Legal & Business Formation' section.** This MUST be the first step. It must detail the process of registering a business entity (like an LLC or sole proprietorship) and obtaining a federal tax ID number (like an EIN in the US), with direct links to the relevant Secretary of State and IRS (or equivalent international) websites for the user's specific location.
-          * **A 'Food Licensing & Safety' section.** This must include direct links to the correct local food licensing applications (e.g., Cottage Food Law) and contact information for local health departments.
-          * **Specific, tailored advice** based on their kitchen choice. 
-              * For **Home Kitchens**: Provide links to relevant YouTube tutorials and specific product examples on e-commerce sites like Amazon for necessary equipment (e.g., bottling kits, pH meters).
-              * For **Commercial Kitchens**: Search for and provide a list of actual, local commercial kitchens near the user's city with names and contact info if available.
-          * **A dedicated section on 'Branding and Packaging'** with actionable advice.
-          * **All steps must be in the correct, logical order** for maximum efficiency, acknowledging that the order may vary slightly by region.
+          * Please briefly describe your food concept, target audience, and any unique selling propositions.
+          * What city, state/province, and country are you operating in?
+          * What is your estimated timeline for launching your food business?
+          * Will you be producing this in your home kitchen or a commercial kitchen? (Acknowledge if they are 'Not Sure' and provide info for both paths).
+      3.  Once you have answers to all five questions, your FINAL response MUST begin with the exact phrase "### Guide:".
+      4.  The guide must be formatted using Markdown and be extremely detailed and actionable, incorporating the user's answers. It MUST include:
+          * **A 'Legal & Business Formation' section.** This MUST be the first step.
+          * **A 'Food Licensing & Safety' section.**
+          * **Specific, tailored advice** based on their kitchen choice.
+          * **A dedicated section on 'Branding and Packaging'** that uses their concept/audience description.
+          * **All steps must be in the correct, logical order.**
 
-      Review the conversation history and decide the next step: either ask another clarifying question or generate the final, foolproof guide.`;
+      Review the conversation history and decide the next step: either ask the next clarifying question or generate the final, foolproof guide.`;
 
     const payload = {
       contents: [
         { role: "user", parts: [{ text: systemPrompt }] },
-        { role: "model", parts: [{ text: "Understood. I will act as a foolproof global consultant, asking key questions first before providing a comprehensive, locally-tailored, link-filled guide with a mandatory legal formation section. What is the user's first question?" }] },
+        { role: "model", parts: [{ text: "Understood. I will act as a foolproof global consultant, asking the five key questions first before providing a comprehensive, locally-tailored, link-filled guide. What is the user's first question?" }] },
         ...history
       ]
     };
@@ -71,7 +72,8 @@ exports.handler = async function (event, context) {
       body: JSON.stringify(data),
     };
 
-  } catch (error) {
+  } catch (error)
+{
     console.error("Error in Netlify function:", error);
     return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
   }
