@@ -4,6 +4,9 @@
 const { GoogleAuth } = require('google-auth-library');
 
 exports.handler = async function (event, context) {
+  // --- DIAGNOSTIC LOG ---
+  console.log("--- RUNNING LATEST FUNCTION CODE (v2) ---");
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
