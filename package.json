@@ -1,7 +1,0 @@
-{
-  "name": "pantry-pal-netlify",
-  "version": "1.0.0",
-  "dependencies": {
-    "google-auth-library": "^9.0.0"
-  }
-}

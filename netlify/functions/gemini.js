@@ -1,11 +1,8 @@
 // This file should be at this path: /netlify/functions/gemini.js
 
-// We need to import Google's authentication library
-const { GoogleAuth } = require('google-auth-library');
-
 exports.handler = async function (event, context) {
   // --- DIAGNOSTIC LOG ---
-  console.log("--- RUNNING LATEST FUNCTION CODE (v2) ---");
+  console.log("--- RUNNING LATEST API KEY FUNCTION (v3) ---");
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
@@ -15,18 +12,17 @@ exports.handler = async function (event, context) {
   try {
     // Get the user's message from the request body
     const { history } = JSON.parse(event.body);
-
-    // Authenticate using the Service Account JSON and the CORRECT scope
-    const auth = new GoogleAuth({
-      credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON),
-      // This is the line that fixes the "insufficient_scope" error
-      scopes: 'https://www.googleapis.com/auth/cloud-platform',
-    });
-
-    const client = await auth.getClient();
-    const projectId = await auth.getProjectId();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
     
+    // Get your secret API key from Netlify's environment variables
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY not found in environment variables.");
+      return { statusCode: 500, body: 'API key not configured.' };
+    }
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
     // The same system prompt to give the AI its persona
     const systemPrompt = `You are Pantry Pal, an expert AI assistant for food entrepreneurs. Your goal is to provide a foolproof, sequential, and extremely granular step-by-step guide that is tailored to the user's specific location anywhere in the world.
             
@@ -55,18 +51,28 @@ exports.handler = async function (event, context) {
       ]
     };
 
-    // Use the authenticated client to make the request
-    const response = await client.request({ url, method: 'POST', data: payload });
+    // Make the request directly with the API key
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+        const errorBody = await response.json();
+        console.error("Error from Google API:", errorBody);
+        return { statusCode: response.status, body: JSON.stringify(errorBody) };
+    }
+
+    const data = await response.json();
     
     return {
       statusCode: 200,
-      body: JSON.stringify(response.data),
+      body: JSON.stringify(data),
     };
 
   } catch (error) {
     console.error("Error in Netlify function:", error);
-    // Provide more detailed error logging
-    const errorBody = error.response ? JSON.stringify(error.response.data) : JSON.stringify({ message: error.message });
-    return { statusCode: 500, body: errorBody };
+    return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
   }
 };
