@@ -134,16 +134,14 @@
         
         let chatHistory = [];
 
-        // MODIFIED FUNCTION: This now calls your Netlify serverless function
         async function getGeminiResponse(currentHistory) {
-            // The CORRECT URL for your Netlify function
-            const apiUrl = `/.netlify/functions/gemini`;
+            // Use a full URL to prevent parsing errors in sandboxed environments.
+            const apiUrl = `${window.location.origin}/.netlify/functions/gemini`;
 
             try {
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // Send the history to your function
                     body: JSON.stringify({ history: currentHistory }) 
                 });
 
@@ -171,28 +169,24 @@
             bubble.id = sender === 'ai-typing' ? 'typing-indicator' : '';
 
             const messageContent = document.createElement('div');
+            messageContent.classList.add('rounded-lg', 'p-3', 'max-w-full');
             
             if (sender === 'ai-typing') {
-                messageContent.classList.add('chat-bubble-ai', 'rounded-lg', 'p-3', 'max-w-lg', 'typing-indicator');
+                messageContent.classList.add('chat-bubble-ai', 'typing-indicator');
                 messageContent.innerHTML = `<span></span><span></span><span></span>`;
-            } else {
-                messageContent.classList.add('rounded-lg', 'p-3', 'max-w-full');
-                if (sender === 'ai' && message.startsWith('### Guide:')) {
-                    const guideContent = message.replace('### Guide:', '').trim();
-                    messageContent.innerHTML = `<div class="prose">${marked.parse(guideContent)}</div>`;
-                } else {
-                    messageContent.textContent = message;
-                }
+            } else if (sender === 'ai') {
+                // Always parse AI messages for potential markdown
+                messageContent.classList.add('chat-bubble-ai');
+                messageContent.innerHTML = `<div class="prose">${marked.parse(message)}</div>`;
+            } else { // sender === 'user'
+                messageContent.classList.add('chat-bubble-user');
+                messageContent.textContent = message;
             }
 
             if (sender === 'user') {
                 bubble.classList.add('justify-end');
-                messageContent.classList.add('chat-bubble-user');
             } else {
                 bubble.classList.add('justify-start');
-                if (sender !== 'ai-typing') {
-                    messageContent.classList.add('chat-bubble-ai');
-                }
             }
             
             bubble.appendChild(messageContent);
