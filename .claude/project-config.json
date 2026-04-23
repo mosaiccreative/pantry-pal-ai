@@ -1,0 +1,17 @@
+{
+  "project_name": "pantry-pal-ai",
+  "project_type": "ai-app",
+  "risk_level": "low",
+  "require_tdd": false,
+  "require_codex_validation": false,
+  "require_gsd": false,
+  "description": "Food AI assistant — recipe and pantry management",
+  "critical_files": [],
+  "deployment_platforms": ["vercel"],
+  "tech_stack": {
+    "frontend": "Next.js, React, Tailwind",
+    "backend": "Node.js",
+    "database": "Supabase PostgreSQL"
+  },
+  "notes": "Fun AI project. No sensitive data. Ship fast and iterate."
+}
